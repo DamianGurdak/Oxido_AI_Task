@@ -1,7 +1,10 @@
 // app.js
 const fs = require('fs');
-const fetch = require('node-fetch');
 const { OPENAI_API_KEY } = require('./config');
+
+// Jeśli używasz Node.js w wersji 18 lub wyższej, możesz użyć wbudowanego fetch
+const fetch = (...args) =>
+  import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const articleText = fs.readFileSync('article.txt', 'utf-8');
 
@@ -25,14 +28,14 @@ async function getArticleHTML(prompt) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 1500,
-      temperature: 0.7
-    })
+      temperature: 0.7,
+    }),
   });
   const data = await response.json();
   return data.choices[0].message.content;
@@ -44,6 +47,12 @@ async function getArticleHTML(prompt) {
     const articleHTML = await getArticleHTML(prompt);
     fs.writeFileSync('artykul.html', articleHTML);
     console.log('Plik artykul.html został wygenerowany.');
+
+    // Generowanie podglądu artykułu
+    const template = fs.readFileSync('szablon.html', 'utf-8');
+    const fullArticle = template.replace('<body>', `<body>${articleHTML}`);
+    fs.writeFileSync('podglad.html', fullArticle);
+    console.log('Plik podglad.html został wygenerowany.');
   } catch (error) {
     console.error('Wystąpił błąd:', error);
   }
